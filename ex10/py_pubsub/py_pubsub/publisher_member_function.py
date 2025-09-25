@@ -5,13 +5,13 @@ import threading
 import sys
 
 
-class KeyboardMovementPublisher(Node):
+class KeyboardCommandPublisher(Node):
 
     def __init__(self):
-        super().__init__('keyboard_movement_publisher')
+        super().__init__('keyboard_command_publisher')
         self.publisher_ = self.create_publisher(String, 'cmd_text', 10)
         
-        self.get_logger().info('Keyboard movement publisher ready')
+        self.get_logger().info('Keyboard command publisher ready')
         self.get_logger().info('Available commands: "turn_right", "turn_left", "move_forward", "move_backward"')
         self.get_logger().info('Type commands and press Enter (or type "exit" to quit)')
         
@@ -48,7 +48,7 @@ class KeyboardMovementPublisher(Node):
 def main(args=None):
     rclpy.init(args=args)
 
-    keyboard_publisher = KeyboardMovementPublisher()
+    keyboard_publisher = KeyboardCommandPublisher()
 
     try:
         rclpy.spin(keyboard_publisher)

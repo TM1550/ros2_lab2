@@ -1,60 +1,61 @@
-# Copyright 2016 Open Source Robotics Foundation, Inc.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 import rclpy
 from rclpy.node import Node
-
 from std_msgs.msg import String
+from geometry_msgs.msg import Twist
 
 
-class MinimalSubscriber(Node):
+class TextToCmdVel(Node):
 
     def __init__(self):
-        super().__init__('minimal_subscriber')
+        super().__init__('text_to_cmd_vel')
+        
+        # Подписка на текстовые команды
         self.subscription = self.create_subscription(
             String,
             'cmd_text',
-            self.listener_callback,
-            10)
-        self.subscription  # prevent unused variable warning
-        self.pub=self.create_publisher(String, 'chatter', 10)
+            self.command_callback,
+            10
+        )
+        
+        # Публикация команд скорости для черепахи
+        self.publisher_ = self.create_publisher(Twist, '/turtle1/cmd_vel', 10)
+        
+        self.get_logger().info('Text to cmd_vel converter ready')
+        self.get_logger().info('Waiting for commands: "turn_right", "turn_left", "move_forward", "move_backward"')
 
-    def listener_callback(self, msg):
-        command="\"{linear: {x: 0.0, y: 0.0, z: 0.0}, angular: {x: 0.0, y: 0.0, z:0.0}}\""
-        if msg.data=='move_forward':
-            command="\"{linear: {x: 1.0, y: 0.0, z: 0.0}, angular: {x: 0.0, y: 0.0, z:0.0}}\""
-        if msg.data=='move_backward':
-            command="\"{linear: {x: -1.0, y: 0.0, z: 0.0}, angular: {x: 0.0, y: 0.0, z:0.0}}\""
-        if msg.data=='turn_right':
-            command="\"{linear: {x: 0.0, y: 0.0, z: 0.0}, angular: {x: 1.0, y: 0.0, z:0.0}}\""
-        if msg.data=='turn_left':
-            command="\"{linear: {x: 0.0, y: 0.0, z: 0.0}, angular: {x: 1.0, y: 0.0, z:0.0}}\""
-        self.get_logger().info('ros2 topic pub -r 1 /turtlesim1/turtle1/cmd_vel geometry_msgs/msg/Twist: %s' % command)
-        self.pub.publish('ros2 topic pub -r 1 /turtlesim1/turtle1/cmd_vel geometry_msgs/msg/Twist: %s' % command)
+    def command_callback(self, msg):
+        command = msg.data.strip().lower()
+        self.get_logger().info(f'Received command: "{command}"')
+        
+        twist_msg = Twist()
+        
+        if command == 'move_forward':
+            twist_msg.linear.x = 1.0  # 1 м/с вперед
+        elif command == 'move_backward':
+            twist_msg.linear.x = -1.0  # 1 м/с назад
+        elif command == 'turn_right':
+            twist_msg.angular.z = -1.5  # 1.5 рад/с по часовой стрелке
+        elif command == 'turn_left':
+            twist_msg.angular.z = 1.5  # 1.5 рад/с против часовой стрелки
+        else:
+            self.get_logger().warn(f'Invalid command: "{command}"')
+            return
+        
+        self.publisher_.publish(twist_msg)
+        self.get_logger().info(f'Published Twist command: linear.x={twist_msg.linear.x}, angular.z={twist_msg.angular.z}')
+
 
 def main(args=None):
     rclpy.init(args=args)
-
-    minimal_subscriber = MinimalSubscriber()
-
-    rclpy.spin(minimal_subscriber)
-
-    # Destroy the node explicitly
-    # (optional - otherwise it will be done automatically
-    # when the garbage collector destroys the node object)
-    minimal_subscriber.destroy_node()
-    rclpy.shutdown()
+    text_to_cmd_vel = TextToCmdVel()
+    
+    try:
+        rclpy.spin(text_to_cmd_vel)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        text_to_cmd_vel.destroy_node()
+        rclpy.shutdown()
 
 
 if __name__ == '__main__':
