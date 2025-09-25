@@ -1,0 +1,6 @@
+WARNING: Package name "TM1550" does not follow the naming conventions. It should start with a lower case letter and only contain lower case letters, digits, underscores, and dashes.
+[1.353s] WARNING:colcon.colcon_core.package_identification:ROS package 'TM1550' in 'src/TM1550' has more than one build type
+Starting >>> TM1550
+Finished <<< TM1550 [4.05s]
+
+Summary: 1 package finished [5.21s]
